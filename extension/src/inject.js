@@ -259,7 +259,6 @@ function createXLIFF(json, callback) {
 }
 
 function download(data, filename, type = 'text/xml') {
-    debugger
     var file = new Blob([data], {type: type});
     if (window.navigator.msSaveOrOpenBlob) // IE10+
         window.navigator.msSaveOrOpenBlob(file, filename);
