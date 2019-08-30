@@ -30,8 +30,14 @@ export const getCleanPathname = () => location.pathname.replace(/^[/]|[/]$/g, ''
 
 // Probably a nicer way to do this.. (dashes make sure we're not matching other pages)
 export const getProjectToken = () => {
-	const res = /^([a-zA-Z0-9]*)-([a-zA-Z0-9]*)-([a-zA-Z0-9]*)-([a-zA-Z0-9]*)-([a-zA-Z0-9]*)+/.exec(getCleanPathname())
-	return res === null ? false : res[0]
+	let res
+	if (isLegacy()) {
+		res = /^([a-zA-Z0-9]*)-([a-zA-Z0-9]*)-([a-zA-Z0-9]*)-([a-zA-Z0-9]*)-([a-zA-Z0-9]*)+/.exec(getCleanPathname())
+		return res === null ? false : res[0]
+	} else {
+		res = /^([a-zA-Z0-9]*)\/([a-zA-Z0-9]*)+/.exec(getCleanPathname())
+		return res === null ? false : res[1]
+	}
 }
 
 export const isInProject = () => !!getProjectToken();
@@ -43,12 +49,14 @@ export const getProjectSection = () => {
 	if (!isInProject()) {
 		return false;
 	}
-	return getCleanPathname().split('/')[1]
+	return getCleanPathname().split('/')[isLegacy() ? 1 : 2]
 };
 
 export const isLegacy = () => location.hostname === 'legacy.graphcms.com';
 
-export const isOverview = () => /^overview\//.test(getCleanPathname());
+export const isOverview = () => {
+	return isLegacy() ? /^overview\//.test(getCleanPathname()) : (getCleanPathname() === '')
+};
 
 
 

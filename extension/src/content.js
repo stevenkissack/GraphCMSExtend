@@ -7,7 +7,7 @@ import domLoaded from 'dom-loaded';
 import compactEntryToolbar from './libs/compactEntryToolbar';
 import { addXLIFFDownloadButton } from './libs/XLIFFTranslate';
 
-import { observeEl, isInProject, getProjectToken, getProjectSection } from './libs/utils';
+import { observeEl, isInProject, getProjectToken, getProjectSection, isLegacy } from './libs/utils';
 
 function injectScript(file) {
     var s = document.createElement('script');
@@ -52,7 +52,13 @@ async function init() {
 					mutation.addedNodes && mutation.addedNodes.forEach((node) => {
 						// Check className each time as mutations seem to be live
 						// Condition: Is the entry form and has translation fields so we want to show an export button
-						if(node.className && node.className.indexOf && node.className.indexOf('editCreateEntryWrapper') !== -1 && node.className.indexOf('export-button-added') === -1 && node.querySelector('div.translationField') !== null) {
+						if ((isLegacy() && node.className && node.className.indexOf && node.className.indexOf('editCreateEntryWrapper') !== -1
+							&& node.className.indexOf('export-button-added') === -1
+							&& node.querySelector('div.translationField') !== null)
+							|| (!isLegacy() && node.parentElement && node.parentElement.dataset && node.parentElement.dataset.test === 'LevelComponent'
+							&& node.className.indexOf('export-button-added') === -1
+							&& [...node.querySelectorAll("*")].filter(n => n.name && (n.name.endsWith('EN') || n.name.endsWith('RU') || n.name.endsWith('PTBR') || n.name.endsWith('ESLA'))).length > 0
+							)) {
 							// console.log('is entry form node')
 							// Gives the extra button space
 							compactEntryToolbar(node)
