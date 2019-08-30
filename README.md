@@ -1,4 +1,4 @@
-# UNOFFICIAL GraphCMS Legacy Extend Chrome Extension
+# UNOFFICIAL GraphCMS App and Legacy Extend Chrome Extension
 
 ### Currently only adds the ability to download XLIFF files from records
 

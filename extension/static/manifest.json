@@ -1,8 +1,8 @@
 {
-	"name": "GraphCMS Extend",
-	"version": "0.1.0",
-	"description": "Browser extension enhancing your GraphCMS (legacy) experience",
-	"homepage_url": "https://github.com/stevokk/graphcmsextend",
+	"name": "GraphCMS XLIFF Exporter",
+	"version": "0.2.0",
+	"description": "Browser extension allowing GraphCMS (both app and legacy) content to be exported to XLIFF for translation.",
+	"homepage_url": "https://github.com/stevokk/GraphCMSExtend",
 	"manifest_version": 2,
 	"minimum_chrome_version": "58",
 	"applications": {
@@ -32,7 +32,8 @@
 		{
 			"run_at": "document_start",
 			"matches": [
-				"https://legacy.graphcms.com/*"
+				"https://legacy.graphcms.com/*",
+				"https://app.graphcms.com/*"
 			],
 			"css": [
 				"content.css"

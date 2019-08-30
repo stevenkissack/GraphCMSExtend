@@ -1,4 +1,5 @@
 import { js2xliff } from 'xliff';
+import { isLegacy } from './libs/utils';
 
 window.__GRAPHCMS__EXTEND__ = {
     renderer: null
@@ -150,7 +151,8 @@ window.addEventListener("message", function(event) {
 }, false);
 
 function getFormData() {
-    const instances = window.__GRAPHCMS__EXTEND__.renderer.Mount._instancesByReactRootID
+    if (isLegacy()) {
+        const instances = window.__GRAPHCMS__EXTEND__.renderer.Mount._instancesByReactRootID
         const instance_keys = Object.keys(instances)
         let instance
 
@@ -191,6 +193,10 @@ function getFormData() {
             console.error('GraphCMS Extend Plugin: Failed to find form in state')
             return false
         }
+    } else {
+        var formValues = document.querySelector('form')[Object.keys(f).filter(k => k.startsWith('__reactInternalInstance'))[0]].return.memoizedProps.formik.values
+        return formValues
+    }
 }
 
 function getTranslationFields(allFields, defaultLocale) {
@@ -205,6 +211,48 @@ function getTranslationFields(allFields, defaultLocale) {
 }
 
 function generateXLIFFJSONStructure(formData) {
+    if (!isLegacy()) {
+        // TODO: There are improvements to be made here:
+        // - default locale can be detected and passed in to this function from other parts of new GraphCMS
+        // - The code below is very similar to the legacy code so they can be built into one for better reuse of code.
+        const translationFields = Object.keys(formData).filter(f => f.endsWith('EN'))
+
+        if(!translationFields.length === 0) {
+            console.log('Missing translations data or fields on form')
+            return false
+        }
+
+        let outputJson = {}
+        translationFields.forEach(field => {
+            outputJson[field.substring(0, field.length - 2)] = {
+                source: formData[field],
+                target: '' // Note: Our translators don't want us to pass our current target content as their content-memory will fill it
+                // target: translations.fields[translations.activeLocales[0]][field], // Enable this line and you can get the current selected locale in the UI
+            }
+        })
+
+            
+        // Custom for our usage:
+        // If we have any of the following: slug -> code -> title
+        // Then we use it in the filename to help be more descriptive for users handling the files (always limited to max 20 characters)
+        let userFriendlyName = false
+
+        if(translationFields.includes('slugEN') && formData.slugEN !== "") {
+            userFriendlyName = formData.slugEN.substring(0, 20)
+        } else if(translationFields.includes('codeEN') && formData.codeEN !== "") {
+            userFriendlyName = formData.codeEN.substring(0, 20)
+        } else if(translationFields.includes('titleEN') && formData.titleEN !== "") {
+            userFriendlyName = formData.titleEN.substring(0, 20)
+        }
+
+        return {
+            resources: { [formData.id]: outputJson },
+            sourceLanguage: 'EN',
+            targetLanguage: '',
+            __name: `${formData.id}_EN${userFriendlyName ? `_${userFriendlyName}` : ''}.xlf`
+        }
+    }
+
     const translations = formData.values.translations
     const translationFields = getTranslationFields(formData.registeredFields, translations.defaultLocale)
     console.log('Translation fields being added to xliff: ', translationFields)
