@@ -41,8 +41,24 @@ async function init() {
 		//if () {
 			// TODO: Change scope to improve performance
 			observeEl(document, (mutations) => {
+				const hasTranslatedFields = (formNode) => {
+					const translatedFieldRegEx = /(.+?)([A-Z]{2,})/g
+					const translatedFields = Array.from(formNode.elements).map(e => { 
+						if (!e.name) return null
+						const r = translatedFieldRegEx.exec(e.name)
+						if (r && r.length > 1) {
+							return r[1]
+						}
+						else {
+							return null
+						}
+					}).filter(e => !!e)
+
+					return (new Set(translatedFields)).size !== translatedFields.length
+				}
+
 				// console.log('mutations found')
-				// Currently we don't have any features outside of the content area, so let's reduce unneccessary checks
+				// Currently we don't have any features outside of the content area, so let's reduce unnecessary checks
 				if(!isInProject() || getProjectSection() !== "content") return;
 				// console.log('is in content section')
 				mutations.forEach((mutation) => {
@@ -57,7 +73,7 @@ async function init() {
 							&& node.querySelector('div.translationField') !== null)
 							|| (!isLegacy() && node.parentElement && node.parentElement.dataset && node.parentElement.dataset.test === 'LevelComponent'
 							&& node.className.indexOf('export-button-added') === -1
-							&& [...node.querySelectorAll("*")].filter(n => n.name && (n.name.endsWith('EN') || n.name.endsWith('RU') || n.name.endsWith('PTBR') || n.name.endsWith('ESLA'))).length > 0
+							&& hasTranslatedFields(node.querySelector('form'))
 							)) {
 							// console.log('is entry form node')
 							// Gives the extra button space

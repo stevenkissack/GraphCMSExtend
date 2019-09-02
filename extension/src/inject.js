@@ -194,8 +194,15 @@ function getFormData() {
             return false
         }
     } else {
-        var formValues = document.querySelector('form')[Object.keys(f).filter(k => k.startsWith('__reactInternalInstance'))[0]].return.memoizedProps.formik.values
-        return formValues
+        const docForm = document.querySelector('form')
+        const reactForm = docForm[Object.keys(docForm).filter(k => k.startsWith('__reactInternalInstance'))[0]]
+        const translatedFieldsObjects = reactForm.memoizedProps.children["0"].props.fields
+        .filter(field => field.variations && field.variations.length > 0 && field.variationEnumeration && field.variationEnumeration.apiId === 'Locale')
+        const translatedFields = translatedFieldsObjects.map(field => field.variations.filter(v => v.variationEnumerationValue.isDefault)[0].field.apiId)
+        const formValues = reactForm.return.memoizedProps.formik.values
+        const defaultLocale = translatedFieldsObjects[0].variations.filter(v => v.variationEnumerationValue.isDefault)[0].variationEnumerationValue.apiId
+
+        return { formValues, translatedFields, defaultLocale }
     }
 }
 
@@ -213,19 +220,18 @@ function getTranslationFields(allFields, defaultLocale) {
 function generateXLIFFJSONStructure(formData) {
     if (!isLegacy()) {
         // TODO: There are improvements to be made here:
-        // - default locale can be detected and passed in to this function from other parts of new GraphCMS
         // - The code below is very similar to the legacy code so they can be built into one for better reuse of code.
-        const translationFields = Object.keys(formData).filter(f => f.endsWith('EN'))
+        const { formValues, translatedFields, defaultLocale } = formData
 
-        if(!translationFields.length === 0) {
+        if(!translatedFields.length === 0) {
             console.log('Missing translations data or fields on form')
             return false
         }
 
         let outputJson = {}
-        translationFields.forEach(field => {
+        translatedFields.forEach(field => {
             outputJson[field.substring(0, field.length - 2)] = {
-                source: formData[field],
+                source: formValues[field],
                 target: '' // Note: Our translators don't want us to pass our current target content as their content-memory will fill it
                 // target: translations.fields[translations.activeLocales[0]][field], // Enable this line and you can get the current selected locale in the UI
             }
@@ -237,19 +243,19 @@ function generateXLIFFJSONStructure(formData) {
         // Then we use it in the filename to help be more descriptive for users handling the files (always limited to max 20 characters)
         let userFriendlyName = false
 
-        if(translationFields.includes('slugEN') && formData.slugEN !== "") {
-            userFriendlyName = formData.slugEN.substring(0, 20)
-        } else if(translationFields.includes('codeEN') && formData.codeEN !== "") {
-            userFriendlyName = formData.codeEN.substring(0, 20)
-        } else if(translationFields.includes('titleEN') && formData.titleEN !== "") {
-            userFriendlyName = formData.titleEN.substring(0, 20)
+        if(translatedFields.includes(`slug${defaultLocale}`) && formValues[`slug${defaultLocale}`] !== "") {
+            userFriendlyName = formValues[`slug${defaultLocale}`].substring(0, 20)
+        } else if(translatedFields.includes(`code${defaultLocale}`) && formValues[`code${defaultLocale}`] !== "") {
+            userFriendlyName = formValues[`code${defaultLocale}`].substring(0, 20)
+        } else if(translatedFields.includes(`title${defaultLocale}`) && formValues[`title${defaultLocale}`] !== "") {
+            userFriendlyName = formValues[`title${defaultLocale}`].substring(0, 20)
         }
 
         return {
-            resources: { [formData.id]: outputJson },
-            sourceLanguage: 'EN',
+            resources: { [formValues.id]: outputJson },
+            sourceLanguage: defaultLocale,
             targetLanguage: '',
-            __name: `${formData.id}_EN${userFriendlyName ? `_${userFriendlyName}` : ''}.xlf`
+            __name: `${formValues.id}_${defaultLocale}${userFriendlyName ? `_${userFriendlyName}` : ''}.xlf`
         }
     }
 
