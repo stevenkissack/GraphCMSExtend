@@ -1,6 +1,6 @@
 {
 	"name": "GraphCMS XLIFF Exporter",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Browser extension allowing GraphCMS (both app and legacy) content to be exported to XLIFF for translation.",
 	"homepage_url": "https://github.com/stevokk/GraphCMSExtend",
 	"manifest_version": 2,
